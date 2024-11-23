@@ -23,7 +23,6 @@ Route::get('/', function () {
 // Menambahkan middleware untuk redirect setelah login
 Route::get('/dashboard', function () {
    $user = auth()->user();
-
     if ($user->hasRole('admin')) {
         return redirect()->route('admin.dashboard'); // Redirect ke route admin
     } elseif ($user->hasRole('user')) {
