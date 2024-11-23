@@ -30,9 +30,7 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         $user = Auth::user(); // Mendapatkan user yang baru saja login
-
-        // Debugging untuk memeriksa user yang login
-        dd($user);
+        
 
         // Redirect berdasarkan role pengguna
         if ($user->isAdmin()) { // Ganti hasRole dengan isAdmin
