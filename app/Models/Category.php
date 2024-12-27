@@ -9,10 +9,8 @@ class Category extends Model
 {
     use HasFactory;
 
-    // Tentukan kolom mana yang dapat diisi secara massal
     protected $fillable = ['name'];
 
-    // Relasi dengan model Post
     public function posts()
     {
         return $this->hasMany(Post::class);

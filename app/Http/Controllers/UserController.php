@@ -2,51 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Post;
+use App\Http\Middleware\RoleMiddleware;
+use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UserController extends Controller
 {
-    /**
-     * Halaman Dashboard User
-     */
+    public function __construct()
+    {
+        $this->middleware(['auth', 'role:user']);
+    }
+
     public function index()
     {
-        // Menampilkan daftar berita yang dipublikasikan
-        $posts = Post::whereNotNull('published_at')
-            ->orderBy('published_at', 'desc')
-            ->paginate(10);
-
+        $posts = Post::whereNotNull('published_at')->latest()->paginate(10);
         return view('user.dashboard', compact('posts'));
     }
 
-    /**
-     * Halaman Detail Postingan
-     */
     public function show($id)
     {
-        $post = Post::findOrFail($id);
-
-        // Menampilkan detail postingan
+        try {
+            $post = Post::findOrFail($id);
+        } catch (ModelNotFoundException $e) {
+            return redirect()->route('user.dashboard')->with('error', 'Post not found');
+        }
         return view('user.post', compact('post'));
     }
 
-    /**
-     * Memberi Respon Positif atau Negatif pada Berita
-     */
     public function respond(Request $request, $id)
     {
-        $post = Post::findOrFail($id);
-
-        // Memeriksa apakah pengguna memberikan respons positif atau negatif
-        if ($request->response === 'like') {
-            $post->likes += 1;
-        } elseif ($request->response === 'dislike') {
-            $post->dislikes += 1;
+        $request->validate(['response' => 'required|in:like,dislike']);
+        try {
+            $post = Post::findOrFail($id);
+            if ($request->response === 'like') {
+                $post->increment('likes');
+            } else {
+                $post->increment('dislikes');
+            }
+            return back()->with('success', 'Thank you for your feedback!');
+        } catch (ModelNotFoundException $e) {
+            return back()->with('error', 'Post not found');
         }
-
-        $post->save();
-
-        return redirect()->back()->with('success', 'Terima kasih atas tanggapan Anda!');
     }
 }

@@ -13,7 +13,7 @@ class RoleMiddleware
         if (Auth::check() && Auth::user()->role === $role) {
             return $next($request);
         }
-        return redirect('/'); // Arahkan ke halaman lain jika peran tidak sesuai
+
+        return redirect()->route('login')->with('error', 'You do not have permission to access this page.');
     }
 }
-

@@ -24,7 +24,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        // Melakukan autentikasi
+        // Melakukan autentikasi pengguna
         $request->authenticate();
 
         // Regenerasi sesi untuk keamanan
@@ -33,15 +33,22 @@ class AuthenticatedSessionController extends Controller
         // Mendapatkan pengguna yang telah login
         $user = Auth::user();
 
-        // Redirect berdasarkan role pengguna
-        if ($user && $user->isAdmin()) { // Periksa apakah admin
-            return redirect()->route('admin.dashboard'); // Sesuaikan dengan route admin
-        } elseif ($user && $user->isUser()) { // Periksa apakah user
-            return redirect()->route('user.dashboard'); // Sesuaikan dengan route user
+        // Periksa apakah pengguna valid
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Gagal masuk. Silakan coba lagi.');
         }
 
-        // Jika tidak ada role yang cocok, redirect ke halaman default
-        return redirect()->intended(route('dashboard'));
+        // Redirect berdasarkan role pengguna
+        if ($user->isAdmin()) { 
+            return redirect()->route('admin.dashboard'); // Redirect ke admin dashboard
+        } elseif ($user->isUser()) { 
+            return redirect()->route('user.dashboard'); // Redirect ke user dashboard
+        }
+
+        // Jika role tidak dikenali, logout dan tampilkan error
+        Auth::logout();
+        $request->session()->invalidate();
+        return redirect()->route('login')->with('error', 'Role tidak valid. Silakan hubungi administrator.');
     }
 
     /**
@@ -52,13 +59,13 @@ class AuthenticatedSessionController extends Controller
         // Logout pengguna
         Auth::guard('web')->logout();
 
-        // Invalidasi sesi
+        // Invalidasi sesi untuk keamanan
         $request->session()->invalidate();
 
         // Regenerasi token CSRF
         $request->session()->regenerateToken();
 
         // Redirect ke halaman utama
-        return redirect('/');
+        return redirect('/')->with('status', 'Anda telah keluar.');
     }
 }
