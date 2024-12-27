@@ -8,12 +8,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use App\Models\User;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Display the login view.
+     * Menampilkan halaman login.
      */
     public function create(): View
     {
@@ -21,39 +20,45 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Memproses autentikasi pengguna.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Melakukan autentikasi
         $request->authenticate();
 
+        // Regenerasi sesi untuk keamanan
         $request->session()->regenerate();
 
-        $user = Auth::user(); // Mendapatkan user yang baru saja login
-        
+        // Mendapatkan pengguna yang telah login
+        $user = Auth::user();
 
         // Redirect berdasarkan role pengguna
-        if ($user->isAdmin()) { // Ganti hasRole dengan isAdmin
+        if ($user && $user->isAdmin()) { // Periksa apakah admin
             return redirect()->route('admin.dashboard'); // Sesuaikan dengan route admin
-        } elseif ($user->isUser()) { // Ganti hasRole dengan isUser
+        } elseif ($user && $user->isUser()) { // Periksa apakah user
             return redirect()->route('user.dashboard'); // Sesuaikan dengan route user
         }
 
-        // Jika tidak ada role yang sesuai, redirect ke dashboard default
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Jika tidak ada role yang cocok, redirect ke halaman default
+        return redirect()->intended(route('dashboard'));
     }
 
     /**
-     * Destroy an authenticated session.
+     * Logout pengguna dari sesi aktif.
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Logout pengguna
         Auth::guard('web')->logout();
 
+        // Invalidasi sesi
         $request->session()->invalidate();
 
+        // Regenerasi token CSRF
         $request->session()->regenerateToken();
 
+        // Redirect ke halaman utama
         return redirect('/');
     }
 }
